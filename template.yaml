@@ -18,19 +18,19 @@ Globals:
       AllowCredentials: "'*'"
 
 Resources:
-  HelloWorldFunction:
+  RequestJobFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: hello_world/
+      CodeUri: request_job/
       Handler: app.lambda_handler
       Runtime: python3.9
       Architectures:
         - x86_64
       Events:
-        HelloWorld:
+        RequestJob:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello
+            Path: /request
             Method: ANY
       Environment:
         Variables:
@@ -40,12 +40,12 @@ Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+  RequestJobApi:
+    Description: "API Gateway endpoint URL for Prod stage for Request Job function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/request/"
+  RequestJobFunction:
+    Description: "Request Job Lambda Function ARN"
+    Value: !GetAtt RequestJobFunction.Arn
+  RequestJobFunctionIamRole:
+    Description: "Implicit IAM Role created for Request Job function"
+    Value: !GetAtt RequestJobFunctionRole.Arn
