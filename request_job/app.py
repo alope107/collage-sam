@@ -48,6 +48,11 @@ def verify_recaptcha(secret_key: str, token: str, ip: str = None, thresh: float 
     if ip:
         params["remoteip"] = ip
 
+    # TODO(auberon) Remove this once secret fetching is working
+    if not os.getenv("AWS_SAM_LOCAL") and not RECAPTCHA_URL:
+        print("TEMPORARILY BYPASSING CAPTCHA VALIDATION")
+        return True
+
     response = requests.post(RECAPTCHA_URL, params=params)
 
     if response.status_code != 200:
