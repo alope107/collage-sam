@@ -1,4 +1,27 @@
-# sam-app
+# CoLLAGE SAM
+AWS SAM specification for a serverless backend for inference for CoLLAGE.
+
+Rough work in progress! Initially started from the [SAM hello-world template](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-getting-started-hello-world.html).
+
+## Setup for local server
+
+1. Create a `env.json` file with this format
+    ```
+    {
+      "Parameters": {
+          "RECAPTCHA_SECRET": "YOUR_SECRET_KEY_HERE"
+      }
+    }
+    ```
+1. Build: `sam build --use-container`
+1. Run local server `sam local start-api --env-vars env.json`
+
+
+
+
+
+
+# ALL BELOW IS FROM HELLO-WORLD TEMPLATE. MUCH IS NOT TRUE OF THIS REPO ANYMORE AND WILL BE REMOVED IN FUTURE COMMITS
 
 This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI. It includes the following files and folders.
 
