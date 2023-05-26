@@ -15,7 +15,7 @@ def get_recaptcha_secret() -> str:
 RECAPTCHA_SECRET = get_recaptcha_secret()
 
 
-def verify_recaptcha(secret_key: str, token: str, ip: str = None) -> bool:
+def verify_recaptcha(secret_key: str, token: str, ip: str = None, thresh: float = SCORE_THRESH) -> bool:
     """Verify reCAPTCHA token with Google's reCAPTCHA API."""
     recaptcha_url = "https://www.google.com/recaptcha/api/siteverify"
 
@@ -28,13 +28,9 @@ def verify_recaptcha(secret_key: str, token: str, ip: str = None) -> bool:
         params["remoteip"] = ip
 
     response = requests.post(recaptcha_url, params=params)
-
-    print(response.status_code)
     result = response.json()
 
-    print(result)
-
-    return result.get("success", False) and result.get("score", False) >= SCORE_THRESH
+    return result.get("success", False) and result.get("score", False) >= thresh
 
 
 def lambda_handler(event, context):
@@ -58,14 +54,6 @@ def lambda_handler(event, context):
 
         Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
     """
-
-    # try:
-    #     ip = requests.get("http://checkip.amazonaws.com/")
-    # except requests.RequestException as e:
-    #     # Send some context about this error to Lambda Logs
-    #     print(e)
-
-    #     raise e
 
     if event['httpMethod'] == 'OPTIONS':
         return {
