@@ -16,6 +16,14 @@ Rough work in progress! Initially started from the [SAM hello-world template](ht
 1. Build: `sam build --use-container`
 1. Run local server `sam local start-api --env-vars env.json`
 
+## Setup for prod server
+
+1. Run `sam deploy --guided`
+1. Set the RecaptchaKeySecret. Make sure you're using the same region you deployed to.
+    ```
+    aws secretsmanager update-secret --secret-id RecaptchaKeySecret --secret-string 'YOUR_SECRET_KEY_HERE'
+    ```
+
 
 
 

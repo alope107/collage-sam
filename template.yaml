@@ -35,6 +35,18 @@ Resources:
       Environment:
         Variables:
           RECAPTCHA_SECRET: dummy
+          RECAPTCHA_SECRET_ARN: !Ref RecaptchaKeySecret
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: 
+                - secretsmanager:GetSecretValue
+              Resource: !Ref RecaptchaKeySecret
+  RecaptchaKeySecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: RecaptchaKeySecret
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function

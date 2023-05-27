@@ -1,9 +1,15 @@
 import json
 import requests
 import os
+import boto3
 
 # Score above which to consider captcha passed
 SCORE_THRESH = .5
+RECAPTCHA_SECRET_ARN = os.getenv("RECAPTCHA_SECRET_ARN")
+REGION = "us-east-1"  # TODO(auberon): Get this programatically?
+RECAPTCHA_SECRET_NAME = "RecaptchaKeySecret"
+
+session = boto3.session.Session()
 
 
 def get_recaptcha_secret() -> str:
@@ -12,11 +18,19 @@ def get_recaptcha_secret() -> str:
     Fetches from RECAPTCHA_SECRET enviornment variable when using sam local.
     TODO(auberon): Fetch from AWS secrets when depoyed.
     '''
-    if os.getenv("AWS_SAM_LOCAL"):
+    if not RECAPTCHA_SECRET_ARN:
+        print("Could not find secret ARN, falling back to environment variable")
         return os.environ["RECAPTCHA_SECRET"]
-    else:
-        # TODO(auberon): Have this fetch from secret manager instead
-        return None
+
+    secrets_client = session.client(
+        service_name="secretsmanager",
+        region_name=REGION
+    )
+
+    # If this fails we do want the entire lambda to fail so we won't try to catch
+    # This will cause the gateway to return a 5XX error code
+    secret_response = secrets_client.get_secret_value(SecretId=RECAPTCHA_SECRET_NAME)
+    return secret_response["SecretString"]
 
 
 RECAPTCHA_SECRET = get_recaptcha_secret()
