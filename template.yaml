@@ -13,7 +13,7 @@ Resources:
       CidrBlock : "10.0.0.0/16" # Reserves 10.0.0.0 through 10.255.255 for the VPC
   InternetGateway:
     Type: "AWS::EC2::InternetGateway" # VPCs don't have internet access by default
-  RouteTable:
+  RouteTable: # This is later going to be used for allowing subnets to route through the internet gateway
     Type: "AWS::EC2::RouteTable"
     Properties:
       VpcId: !Ref VPC
@@ -23,20 +23,16 @@ Resources:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
   SecurityGroup:
-    Type: "AWS::EC2::SecurityGroup"
+    Type: "AWS::EC2::SecurityGroup" # A security group is basically a firewall. We're going to use it later to open up SSH access.
       Properties:
-        GroupDescription: "EC2 Security Group for instances launched in the VPC by Batch",
+        GroupDescription: "EC2 Security Group for instances launched in the VPC by Batch"
         VpcId: !Ref VPC
-      }
-    },
-    "Subnet" : {
-      "Type" : "AWS::EC2::Subnet",
-      "Properties" : {
-        "CidrBlock" : "10.0.0.0/24",
-        "VpcId" : { "Ref" : "VPC" },
-        "MapPublicIpOnLaunch" : "True"
-      }
-    },
+  Subnet:
+    Type: "AWS::EC2::Subnet"
+    Properties:
+      CidrBlock: "10.0.0.0/24"
+      VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
     "Route" : {
       "Type" : "AWS::EC2::Route",
       "Properties" : {
