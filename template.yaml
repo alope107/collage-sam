@@ -1,63 +1,162 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  sam-app
+  batch-attempt
 
-  Sample SAM Template for sam-app
+  Attempting to use AWS Batch from CloudFormation
 
-# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
-Globals:
-  Function:
-    Timeout: 3
-    MemorySize: 128
-  Api:
-    Cors:
-      AllowMethods: "'GET,POST,OPTIONS'"
-      AllowHeaders: "'content-type'"
-      AllowOrigin: "'*'"
-      AllowCredentials: "'*'"
 
 Resources:
-  RequestJobFunction:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+  VPC:
+    Type: "AWS::EC2::VPC"
     Properties:
-      CodeUri: request_job/
-      Handler: app.lambda_handler
-      Runtime: python3.9
-      Architectures:
-        - x86_64
-      Events:
-        RequestJob:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-          Properties:
-            Path: /request
-            Method: ANY
-      Environment:
-        Variables:
-          RECAPTCHA_SECRET: dummy
-          RECAPTCHA_SECRET_ARN: !Ref RecaptchaKeySecret
-      Policies:
-        - Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Action: 
-                - secretsmanager:GetSecretValue
-              Resource: !Ref RecaptchaKeySecret
-  RecaptchaKeySecret:
-    Type: AWS::SecretsManager::Secret
+      CidrBlock : "10.0.0.0/16" # Reserves 10.0.0.0 through 10.255.255 for the VPC
+  InternetGateway:
+    Type: "AWS::EC2::InternetGateway" # VPCs don't have internet access by default
+  RouteTable:
+    Type: "AWS::EC2::RouteTable"
     Properties:
-      Name: RecaptchaKeySecret
-
-Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  RequestJobApi:
-    Description: "API Gateway endpoint URL for Prod stage for Request Job function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/request/"
-  RequestJobFunction:
-    Description: "Request Job Lambda Function ARN"
-    Value: !GetAtt RequestJobFunction.Arn
-  RequestJobFunctionIamRole:
-    Description: "Implicit IAM Role created for Request Job function"
-    Value: !GetAtt RequestJobFunctionRole.Arn
+      VpcId: !Ref VPC
+  VPCGatewayAttachment:
+    Type: "AWS::EC2::VPCGatewayAttachment" # The VPC and the gateway need to be connected for it to be able to be used
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  SecurityGroup:
+    Type: "AWS::EC2::SecurityGroup"
+      Properties:
+        GroupDescription: "EC2 Security Group for instances launched in the VPC by Batch",
+        VpcId: !Ref VPC
+      }
+    },
+    "Subnet" : {
+      "Type" : "AWS::EC2::Subnet",
+      "Properties" : {
+        "CidrBlock" : "10.0.0.0/24",
+        "VpcId" : { "Ref" : "VPC" },
+        "MapPublicIpOnLaunch" : "True"
+      }
+    },
+    "Route" : {
+      "Type" : "AWS::EC2::Route",
+      "Properties" : {
+        "RouteTableId" : { "Ref" : "RouteTable" },
+        "DestinationCidrBlock" : "0.0.0.0/0",
+        "GatewayId" : { "Ref" : "InternetGateway" }
+      }
+    },
+    "SubnetRouteTableAssociation" : {
+      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties" : {
+        "RouteTableId" : { "Ref" : "RouteTable" },
+        "SubnetId" : { "Ref" : "Subnet" }
+      }
+    },
+    "BatchServiceRole" : {
+      "Type" : "AWS::IAM::Role",
+      "Properties" : {
+        "AssumeRolePolicyDocument" : {
+          "Version" : "2012-10-17",
+          "Statement" : [
+            {
+              "Effect" : "Allow",
+              "Principal" : {
+                "Service" : "batch.amazonaws.com"
+              },
+              "Action" : "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns" : [
+          "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
+        ]
+      }
+    },
+    "IamInstanceProfile" : {
+      "Type" : "AWS::IAM::InstanceProfile",
+      "Properties" : {
+        "Roles" : [{ "Ref" : "EcsInstanceRole" }]
+      }
+    },
+    "EcsInstanceRole" : {
+      "Type" : "AWS::IAM::Role",
+      "Properties" : {
+        "AssumeRolePolicyDocument" : {
+          "Version" : "2008-10-17",
+          "Statement" : [
+            {
+              "Sid" : "",
+              "Effect" : "Allow",
+              "Principal" : {
+                "Service" : "ec2.amazonaws.com"
+              },
+              "Action" : "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns" : [
+          "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+        ]
+      }
+    },
+    "JobDefinition" : {
+      "Type" : "AWS::Batch::JobDefinition",
+      "Properties" : {
+        "Type" : "container",
+        "ContainerProperties" : {
+          "Image" : { 
+	    "Fn::Join": [ "", [ "137112412989.dkr.ecr.", { "Ref" : "AWS::Region" }, ".amazonaws.com/amazonlinux:latest" ]] 
+	  },
+          "Vcpus" : 2,
+          "Memory" : 2000,
+          "Command" : [ "echo", "Hello world" ]
+        },
+        "RetryStrategy" : {
+          "Attempts" : 1
+        }
+      }
+    },
+    "JobQueue" : {
+      "Type" : "AWS::Batch::JobQueue",
+      "Properties" : {
+        "Priority" : 1,
+        "ComputeEnvironmentOrder" : [
+          {
+            "Order" : 1,
+            "ComputeEnvironment" : { "Ref" : "ComputeEnvironment" }
+          }
+        ]
+      }
+    },
+    "ComputeEnvironment" : {
+      "Type" : "AWS::Batch::ComputeEnvironment",
+      "Properties" : {
+        "Type" : "MANAGED",
+        "ComputeResources" : {
+          "Type" : "EC2",
+          "MinvCpus" : 0,
+          "DesiredvCpus" : 0,
+          "MaxvCpus" : 64,
+          "InstanceTypes" : [
+            "optimal"
+          ],
+          "Subnets" : [{ "Ref" : "Subnet" }],
+          "SecurityGroupIds" : [{ "Ref" : "SecurityGroup" }],
+          "InstanceRole" : { "Ref" : "IamInstanceProfile" }
+        },
+        "ServiceRole" : { "Ref" : "BatchServiceRole" }
+      }
+    }
+  },
+  "Outputs" : {
+    "ComputeEnvironmentArn" : {
+      "Value" : { "Ref" : "ComputeEnvironment" }
+    },
+    "JobQueueArn" : {
+      "Value" : { "Ref" : "JobQueue" }
+    },
+    "JobDefinitionArn": {
+      "Value" : { "Ref" : "JobDefinition" }
+    }
+  }
+}
