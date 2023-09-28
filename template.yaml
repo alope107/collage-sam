@@ -5,12 +5,17 @@ Description: >
 
   Attempting to use AWS Batch from CloudFormation
 
+  Adapted from Hello World! From https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/sample-templates-services-us-west-2.html#w4ab1c35c58c13b9
+
 
 Resources:
   VPC:
     Type: "AWS::EC2::VPC"
     Properties:
-      CidrBlock : "10.0.0.0/16" # Reserves 10.0.0.0 through 10.255.255 for the VPC
+      CidrBlock : "10.0.0.0/16" # Reserves 10.0.0.0 through 10.0.255.255 for the VPC
+      # Importantly, 10.0.0.0/8 is reserved generally for internal networks, so this shouldn't cause any overlap with anything on the public internet
+      EnableDnsSupport: true # Needed if we want to be able to make requests to external websites. This may actually not be necessary for our use case, will revisit later.
+      EnableDnsHostnames: true
   InternetGateway:
     Type: "AWS::EC2::InternetGateway" # VPCs don't have internet access by default
   RouteTable: # This is later going to be used for allowing subnets to route through the internet gateway
@@ -28,26 +33,22 @@ Resources:
         GroupDescription: "EC2 Security Group for instances launched in the VPC by Batch"
         VpcId: !Ref VPC
   Subnet:
-    Type: "AWS::EC2::Subnet"
+    Type: "AWS::EC2::Subnet" # The subnet is partitioned off within the VPC. I think this will be used by the EC2 instances used by Batch.
     Properties:
-      CidrBlock: "10.0.0.0/24"
+      CidrBlock: "10.0.0.0/24" # The 24 most significant bits are frozen, leaving 10.0.0.0 - 10.0.0.255 for the subnet
       VpcId: !Ref VPC
       MapPublicIpOnLaunch: true
-    "Route" : {
-      "Type" : "AWS::EC2::Route",
-      "Properties" : {
-        "RouteTableId" : { "Ref" : "RouteTable" },
-        "DestinationCidrBlock" : "0.0.0.0/0",
-        "GatewayId" : { "Ref" : "InternetGateway" }
-      }
-    },
-    "SubnetRouteTableAssociation" : {
-      "Type" : "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties" : {
-        "RouteTableId" : { "Ref" : "RouteTable" },
-        "SubnetId" : { "Ref" : "Subnet" }
-      }
-    },
+  Route: 
+    Type: "AWS::EC2::Route",
+    Properties: 
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: "0.0.0.0/0" # Routes everthing to the public internet EXCEPT for the implicit routes created by the VPC
+      GatewayId: !Ref InternetGateway
+  SubnetRouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref Subnet
     "BatchServiceRole" : {
       "Type" : "AWS::IAM::Role",
       "Properties" : {
