@@ -29,7 +29,7 @@ Resources:
       InternetGatewayId: !Ref InternetGateway
   SecurityGroup:
     Type: "AWS::EC2::SecurityGroup" # A security group is basically a firewall. We're going to use it later to open up SSH access.
-      Properties:
+      Properties:              
         GroupDescription: "EC2 Security Group for instances launched in the VPC by Batch"
         VpcId: !Ref VPC
   Subnet:
@@ -49,26 +49,18 @@ Resources:
     Properties:
       RouteTableId: !Ref RouteTable
       SubnetId: !Ref Subnet
-    "BatchServiceRole" : {
-      "Type" : "AWS::IAM::Role",
-      "Properties" : {
-        "AssumeRolePolicyDocument" : {
-          "Version" : "2012-10-17",
-          "Statement" : [
-            {
-              "Effect" : "Allow",
-              "Principal" : {
-                "Service" : "batch.amazonaws.com"
-              },
-              "Action" : "sts:AssumeRole"
-            }
-          ]
-        },
-        "ManagedPolicyArns" : [
-          "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
-        ]
-      }
-    },
+  BatchServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: "Allow",
+              Principal:
+                Service: "batch.amazonaws.com"
+              Action: "sts:AssumeRole"
+      ManagedPolicyArns: 
+        - "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
     "IamInstanceProfile" : {
       "Type" : "AWS::IAM::InstanceProfile",
       "Properties" : {
