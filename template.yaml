@@ -49,45 +49,36 @@ Resources:
     Properties:
       RouteTableId: !Ref RouteTable
       SubnetId: !Ref Subnet
-  BatchServiceRole:
+  BatchServiceRole: # Allows the batch service to assume the typical service role
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
-            - Effect: "Allow",
+            - Effect: "Allow"
               Principal:
                 Service: "batch.amazonaws.com"
               Action: "sts:AssumeRole"
       ManagedPolicyArns: 
         - "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
-    "IamInstanceProfile" : {
-      "Type" : "AWS::IAM::InstanceProfile",
-      "Properties" : {
-        "Roles" : [{ "Ref" : "EcsInstanceRole" }]
-      }
-    },
-    "EcsInstanceRole" : {
-      "Type" : "AWS::IAM::Role",
-      "Properties" : {
-        "AssumeRolePolicyDocument" : {
-          "Version" : "2008-10-17",
-          "Statement" : [
-            {
-              "Sid" : "",
-              "Effect" : "Allow",
-              "Principal" : {
-                "Service" : "ec2.amazonaws.com"
-              },
-              "Action" : "sts:AssumeRole"
-            }
-          ]
-        },
-        "ManagedPolicyArns" : [
-          "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
-        ]
-      }
-    },
+  IamInstanceProfile: # Profiles are the main way that roles get associated with specific EC2 instances.
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Roles: # Needs a list, but only one role can be attached :/
+       - !Ref "EcsInstanceRole"
+  EcsInstanceRole: # Role that will be used for EC2 instances within an ECS cluster
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2008-10-17"
+        Statement:
+            - Sid: "" # Sid is normally a human readable ID. It seems like it's unecessary here? Will eventually experiment with removing it.
+              Effect: "Allow"
+              Principal:
+                Service: "ec2.amazonaws.com"
+              Action: "sts:AssumeRole"
+      ManagedPolicyArns: 
+        - "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
     "JobDefinition" : {
       "Type" : "AWS::Batch::JobDefinition",
       "Properties" : {
