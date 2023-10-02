@@ -115,7 +115,7 @@ Resources:
         SecurityGroupIds:
           - !Ref SecurityGroup
         InstanceRole: !Ref IamInstanceProfile
-        ServiceRole: !Ref BatchServiceRole
+      ServiceRole: !Ref BatchServiceRole
 Outputs: #Outputs shown on command line and in console.
   ComputeEnvironmentArn:
     Value: !Ref ComputeEnvironment
