@@ -1,9 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  sam-app
+  batch-attempt
 
-  Sample SAM Template for sam-app
+  Attempting to use AWS Batch from CloudFormation
+
+  Adapted from Hello World! From https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/sample-templates-services-us-west-2.html#w4ab1c35c58c13b9
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
@@ -18,6 +20,7 @@ Globals:
       AllowCredentials: "'*'"
 
 Resources:
+  ### LAMBDA ###
   RequestJobFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -48,7 +51,117 @@ Resources:
     Properties:
       Name: RecaptchaKeySecret
 
-Outputs:
+  ### BATCH ###
+  VPC:
+    Type: "AWS::EC2::VPC"
+    Properties:
+      CidrBlock : "10.0.0.0/16" # Reserves 10.0.0.0 through 10.0.255.255 for the VPC
+      # Importantly, 10.0.0.0/8 is reserved generally for internal networks, so this shouldn't cause any overlap with anything on the public internet
+      EnableDnsSupport: true # Needed if we want to be able to make requests to external websites. This may actually not be necessary for our use case, will revisit later.
+      EnableDnsHostnames: true
+  InternetGateway:
+    Type: "AWS::EC2::InternetGateway" # VPCs don't have internet access by default
+  RouteTable: # This is later going to be used for allowing subnets to route through the internet gateway
+    Type: "AWS::EC2::RouteTable"
+    Properties:
+      VpcId: !Ref VPC
+  VPCGatewayAttachment:
+    Type: "AWS::EC2::VPCGatewayAttachment" # The VPC and the gateway need to be connected for it to be able to be used
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+  SecurityGroup:
+    Type: "AWS::EC2::SecurityGroup" # A security group is basically a firewall. We're going to use it later to open up SSH access.
+    Properties:              
+      GroupDescription: "EC2 Security Group for instances launched in the VPC by Batch"
+      VpcId: !Ref VPC
+  Subnet:
+    Type: "AWS::EC2::Subnet" # The subnet is partitioned off within the VPC. I think this will be used by the EC2 instances used by Batch.
+    Properties:
+      CidrBlock: "10.0.0.0/24" # The 24 most significant bits are frozen, leaving 10.0.0.0 - 10.0.0.255 for the subnet
+      VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
+  Route: 
+    Type: "AWS::EC2::Route"
+    Properties: 
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: "0.0.0.0/0" # Routes everthing to the public internet EXCEPT for the implicit routes created by the VPC
+      GatewayId: !Ref InternetGateway
+  SubnetRouteTableAssociation:
+    Type: "AWS::EC2::SubnetRouteTableAssociation"
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref Subnet
+  BatchServiceRole: # Allows the batch service to assume the typical service role
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            - Effect: "Allow"
+              Principal:
+                Service: "batch.amazonaws.com"
+              Action: "sts:AssumeRole"
+      ManagedPolicyArns: 
+        - "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
+  IamInstanceProfile: # Profiles are the main way that roles get associated with specific EC2 instances.
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Roles: # Needs a list, but only one role can be attached :/
+       - !Ref "EcsInstanceRole"
+  EcsInstanceRole: # Role that will be used for EC2 instances within an ECS cluster
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2008-10-17"
+        Statement:
+            - Sid: "" # Sid is normally a human readable ID. It seems like it's unecessary here? Will eventually experiment with removing it.
+              Effect: "Allow"
+              Principal:
+                Service: "ec2.amazonaws.com"
+              Action: "sts:AssumeRole"
+      ManagedPolicyArns: 
+        - "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+  JobDefinition: # Defines what running a single job looks like
+    Type: "AWS::Batch::JobDefinition"
+    Properties:
+      Type: "container"
+      ContainerProperties:
+        Image: !Join ["", [ "137112412989.dkr.ecr.", !Ref AWS::Region, ".amazonaws.com/amazonlinux:latest" ]] # Access the Amazon maintained linux image
+        Vcpus: 2
+        Memory: 2000 # 2 GB
+        Command:
+        - "echo"
+        - "Hello world"
+      RetryStrategy:
+        Attempts: 1
+  JobQueue:
+    Type: "AWS::Batch::JobQueue"
+    Properties:
+      Priority: 1
+      ComputeEnvironmentOrder:
+          - Order: 1
+            ComputeEnvironment: !Ref ComputeEnvironment
+  ComputeEnvironment:
+    Type: "AWS::Batch::ComputeEnvironment"
+    Properties:
+      Type: "MANAGED"
+      ComputeResources:
+        Type: "EC2" # WE're going to use EC2 instead of Faergate because later we'll need GPUs
+        MinvCpus: 0 # Will spin down to zero if no jobs
+        DesiredvCpus: 0
+        MaxvCpus: 64
+        InstanceTypes:
+          - "optimal"
+        Subnets:
+          - !Ref Subnet
+        SecurityGroupIds:
+          - !Ref SecurityGroup
+        InstanceRole: !Ref IamInstanceProfile
+      ServiceRole: !Ref BatchServiceRole
+
+Outputs: #Outputs shown on command line and in console.
+  ### LAMBDA ###
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
@@ -61,3 +174,11 @@ Outputs:
   RequestJobFunctionIamRole:
     Description: "Implicit IAM Role created for Request Job function"
     Value: !GetAtt RequestJobFunctionRole.Arn
+
+  ### BATCH ###
+  ComputeEnvironmentArn:
+    Value: !Ref ComputeEnvironment
+  JobQueueArn:
+    Value: !Ref JobQueue
+  JobDefinitionArn:
+    Value: !Ref JobDefinition

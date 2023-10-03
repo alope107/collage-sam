@@ -6,7 +6,7 @@ import boto3
 # Score above which to consider captcha passed
 SCORE_THRESH = .5
 RECAPTCHA_SECRET_ARN = os.getenv("RECAPTCHA_SECRET_ARN")
-REGION = "us-east-1"  # TODO(auberon): Get this programatically?
+REGION = "us-west-1"  # TODO(auberon): Get this programatically?
 RECAPTCHA_SECRET_NAME = "RecaptchaKeySecret"
 
 session = boto3.session.Session()
