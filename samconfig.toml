@@ -19,7 +19,7 @@ confirm_changeset = true
 resolve_s3 = true
 stack_name = "captcha-test"
 s3_prefix = "captcha-test"
-region = "us-east-1"
+region = "us-west-1"
 disable_rollback = true
 image_repositories = []
 
