@@ -18,6 +18,8 @@ Globals:
       AllowHeaders: "'content-type'"
       AllowOrigin: "'*'"
       AllowCredentials: "'*'"
+    BinaryMediaTypes:
+      - "multipart/form-data"
 
 Resources:
   ### LAMBDA ###
