@@ -2,6 +2,9 @@ import json
 import requests
 import os
 import boto3
+import base64
+import cgi
+from requests_toolbelt.multipart import decoder
 
 # Score above which to consider captcha passed
 SCORE_THRESH = .5
@@ -80,6 +83,43 @@ def verify_recaptcha(secret_key: str, token: str, ip: str = None, thresh: float 
     return result.get("success", False) and result.get("score", False) >= thresh
 
 
+def decode_form_data(body: str, is_base64: bool, content_type: str) -> dict:
+    if is_base64:
+        body = base64.b64decode(body)
+
+    multipart_data = decoder.MultipartDecoder(body, content_type)
+
+    expected_parts = {"fasta": "file", "token": "string", "species": "string"}
+    data = {}
+    for part in multipart_data.parts:
+        content_disposition = part.headers.get(b'Content-Disposition', b'').decode('utf-8')
+        if content_disposition:
+            parsed = cgi.parse_header(content_disposition)
+            # TODO(auberon): More header validation?
+            name = parsed[1]["name"]
+            if name not in expected_parts:
+                raise EarlyExitException(f"Malformed request, go unexpected form part '{name}'", 400)
+            data[name] = part.text if expected_parts[name] == "text" else part.content
+        else:
+            raise EarlyExitException("Malformed request, missing Content-Disposition on form part", 400)
+
+    for expected_part in expected_parts:
+        if expected_part not in data:
+            raise EarlyExitException(f"Malformed request, missing expected form part '{expected_part}'", 400)
+
+    return data
+
+
+def normalize_event_headers(event):
+    """
+    HTTP headers are case-insensitive. This normalizes them all to lower case.
+    Taken from https://github.com/aws/aws-sam-cli/issues/1860
+    """
+    event["headers"].update(
+        {name.lower(): value for name, value in event["headers"].items()}
+    )
+
+
 def lambda_handler(event, context):
     """Sample pure Lambda function
 
@@ -113,18 +153,11 @@ def lambda_handler(event, context):
                 'body': ''
             }
 
-        request_body = json.loads(event["body"])
+        normalize_event_headers(event)
 
-        if "token" not in request_body:
-            return {
-                "statusCode": 400,
-                "body": json.dumps({
-                    "msg": "Missing required element of request body: token"
-                })
-            }
+        form_data = decode_form_data(event["body"], event["isBase64Encoded"], event["headers"]["content-type"])
 
-        is_valid = verify_recaptcha(RECAPTCHA_SECRET, request_body["token"])
-
+        is_valid = verify_recaptcha(RECAPTCHA_SECRET, form_data["token"])
         return {
             "statusCode": 200,
             "body": json.dumps({"is_valid": is_valid}),
@@ -136,7 +169,8 @@ def lambda_handler(event, context):
         }
     except EarlyExitException as e:
         return e.to_return
-    except:
+    except Exception as e:
+        print(repr(e))
         return {
             "statusCode": 500,
             "body": json.dumps({
