@@ -48,10 +48,22 @@ Resources:
               Action: 
                 - secretsmanager:GetSecretValue
               Resource: !Ref RecaptchaKeySecret
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+                # Get and List may not be needed. Will possibly remove later.
+                - s3:GetObject
+                - s3:ListBucket
+              Resource:
+                - !Sub "arn:aws:s3:::${InputOutputBucket}/*"
   RecaptchaKeySecret:
     Type: AWS::SecretsManager::Secret
     Properties:
       Name: RecaptchaKeySecret
+  InputOutputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "collage-${AWS::AccountId}-${AWS::Region}"
 
   ### BATCH ###
   VPC:
@@ -176,6 +188,9 @@ Outputs: #Outputs shown on command line and in console.
   RequestJobFunctionIamRole:
     Description: "Implicit IAM Role created for Request Job function"
     Value: !GetAtt RequestJobFunctionRole.Arn
+  InputOutputBucket:
+    Description: "Bucket Name for input and output"
+    Value: !Ref InputOutputBucket
 
   ### BATCH ###
   ComputeEnvironmentArn:
