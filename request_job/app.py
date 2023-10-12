@@ -9,7 +9,7 @@ from requests_toolbelt.multipart import decoder
 # Score above which to consider captcha passed
 SCORE_THRESH = .5
 RECAPTCHA_SECRET_ARN = os.getenv("RECAPTCHA_SECRET_ARN")
-REGION = "us-west-1"  # TODO(auberon): Get this programatically?
+REGION = os.environ.get('AWS_REGION')
 RECAPTCHA_SECRET_NAME = "RecaptchaKeySecret"
 
 session = boto3.session.Session()
