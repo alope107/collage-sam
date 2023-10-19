@@ -41,6 +41,7 @@ Resources:
         Variables:
           RECAPTCHA_SECRET: dummy
           RECAPTCHA_SECRET_ARN: !Ref RecaptchaKeySecret
+          INPUT_BUCKET: !Ref InputOutputBucket
       Policies:
         - Version: '2012-10-17'
           Statement:

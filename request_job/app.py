@@ -1,4 +1,5 @@
 import json
+import uuid
 import requests
 import os
 import boto3
@@ -9,8 +10,13 @@ from requests_toolbelt.multipart import decoder
 # Score above which to consider captcha passed
 SCORE_THRESH = .5
 RECAPTCHA_SECRET_ARN = os.getenv("RECAPTCHA_SECRET_ARN")
-REGION = os.environ.get('AWS_REGION')
+REGION = os.environ.get("AWS_REGION")
+print(f"REGION: {REGION}")
 RECAPTCHA_SECRET_NAME = "RecaptchaKeySecret"
+
+INPUT_BUCKET = os.environ.get("INPUT_BUCKET")
+INPUT_PREFIX = "input/"
+print(f"INPUT_BUCKET: {INPUT_BUCKET}")
 
 session = boto3.session.Session()
 
@@ -158,9 +164,24 @@ def lambda_handler(event, context):
         form_data = decode_form_data(event["body"], event["isBase64Encoded"], event["headers"]["content-type"])
 
         is_valid = verify_recaptcha(RECAPTCHA_SECRET, form_data["token"])
+
+        s3_client = session.client(
+            service_name="s3",
+            region_name=REGION
+        )
+
+        input_id = uuid.uuid4().hex
+
+        # TODO(auberon): Inspect response?
+        s3_client.put_object(
+            Body=form_data["fasta"],
+            Bucket=INPUT_BUCKET,
+            Key=f"{INPUT_PREFIX}{input_id}"
+        )
+
         return {
             "statusCode": 200,
-            "body": json.dumps({"is_valid": is_valid}),
+            "body": json.dumps({"is_valid": is_valid, "id": input_id}),
             'headers': {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT',
