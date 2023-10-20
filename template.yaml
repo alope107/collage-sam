@@ -65,6 +65,10 @@ Resources:
       Runtime: python3.9
       Architectures:
         - x86_64
+      Environment:
+        Variables:
+          JOB_DEFINITION: !Ref JobDefinition
+          JOB_QUEUE: !Ref JobQueue
       Events:
         InputUploaded:
           Type: S3
@@ -77,6 +81,15 @@ Resources:
                 Rules:
                   - Name: "prefix"
                     Value: "input/"
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - batch:SubmitJob
+              Resource:
+              - !Ref JobDefinition
+              - !Ref JobQueue
   RecaptchaKeySecret:
     Type: AWS::SecretsManager::Secret
     Properties:
