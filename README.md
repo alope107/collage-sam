@@ -5,7 +5,7 @@ Rough work in progress! Initially started from the [SAM hello-world template](ht
 
 ## Setup for local server
 
-1. Create a `env.json` file with this format
+1. Create a `sam/env.json` file with this format
     ```
     {
       "Parameters": {
@@ -13,12 +13,14 @@ Rough work in progress! Initially started from the [SAM hello-world template](ht
       }
     }
     ```
+1. Change working directory to `sam/`. All sam commands should be run from the `sam/` directory 
 1. Build: `sam build --use-container`
 1. Run local server `sam local start-api --env-vars env.json`
 
 ## Setup for prod server
 
-1. Run `sam build`
+1. Change working directory to `sam/`. All sam commands should be run from the `sam/` directory 
+1. Run `sam build --use-container`
 1. Run `sam deploy` to use default settings in `samconfig.toml`. To use different settings either modify the config file or use `sam deploy --guided`
 1. Set the RecaptchaKeySecret. Make sure you're using the same region you deployed to.
     ```

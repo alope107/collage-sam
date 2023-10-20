@@ -175,12 +175,10 @@ Resources:
     Properties:
       Type: "container"
       ContainerProperties:
-        Image: !Join ["", [ "137112412989.dkr.ecr.", !Ref AWS::Region, ".amazonaws.com/amazonlinux:latest" ]] # Access the Amazon maintained linux image
+        # TODO(auberon): Make image configurable
+        Image: "redcliffesalaman/collage-aws:latest"
         Vcpus: 2
         Memory: 2000 # 2 GB
-        Command:
-        - "echo"
-        - "Hello world"
       RetryStrategy:
         Attempts: 1
   JobQueue:
