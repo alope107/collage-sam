@@ -57,6 +57,26 @@ Resources:
                 - s3:ListBucket
               Resource:
                 - !Sub "arn:aws:s3:::${InputOutputBucket}/*"
+  StartJobFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: start_job/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        InputUploaded:
+          Type: S3
+          Properties:
+            Bucket: !Ref InputOutputBucket
+            Events:
+              - "s3:ObjectCreated:*"
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: "prefix"
+                    Value: "input/"
   RecaptchaKeySecret:
     Type: AWS::SecretsManager::Secret
     Properties:
