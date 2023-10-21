@@ -1,0 +1,8 @@
+# A requirements file that holds all the dependencies needed for all the lambdas
+# Also holds the requirements needed for testing.
+# This is the requirements file that should be used for local development.
+# TODO(auberon): Pin versions and auto-generate this file
+pytest
+boto3
+requests==2.29.0
+requests-toolbelt==1.0.0
