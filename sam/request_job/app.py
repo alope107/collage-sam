@@ -18,23 +18,21 @@ INPUT_BUCKET = os.environ.get("INPUT_BUCKET")
 INPUT_PREFIX = "input/"
 print(f"INPUT_BUCKET: {INPUT_BUCKET}")
 
-session = boto3.session.Session()
+secrets_client = boto3.client(
+    service_name="secretsmanager",
+    region_name=REGION
+)
+
+s3_client = boto3.client(
+    service_name="s3",
+    region_name=REGION
+)
 
 
 def get_recaptcha_secret() -> str:
     '''
     Fetches the recaptcha service secret key.
-    Fetches from RECAPTCHA_SECRET enviornment variable when using sam local.
-    TODO(auberon): Fetch from AWS secrets when depoyed.
     '''
-    if not RECAPTCHA_SECRET_ARN:
-        print("Could not find secret ARN, falling back to environment variable")
-        return os.environ["RECAPTCHA_SECRET"]
-
-    secrets_client = session.client(
-        service_name="secretsmanager",
-        region_name=REGION
-    )
 
     # If this fails we do want the entire lambda to fail so we won't try to catch
     # This will cause the gateway to return a 5XX error code
@@ -164,11 +162,6 @@ def lambda_handler(event, context):
         form_data = decode_form_data(event["body"], event["isBase64Encoded"], event["headers"]["content-type"])
 
         is_valid = verify_recaptcha(RECAPTCHA_SECRET, form_data["token"])
-
-        s3_client = session.client(
-            service_name="s3",
-            region_name=REGION
-        )
 
         input_id = uuid.uuid4().hex
 
