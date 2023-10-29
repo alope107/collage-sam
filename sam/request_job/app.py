@@ -7,6 +7,8 @@ import base64
 import cgi
 from requests_toolbelt.multipart import decoder
 
+print("Boto3 in request_job.app", boto3)
+
 # Score above which to consider captcha passed
 SCORE_THRESH = .5
 RECAPTCHA_SECRET_ARN = os.getenv("RECAPTCHA_SECRET_ARN")
