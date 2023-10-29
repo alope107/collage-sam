@@ -11,15 +11,19 @@ def mock_boto3_client(config):
     Currently mocked services:
         - Secrets Manager
         - S3
+        - Batch
     '''
     mock_secrets_client = Mock()
     mock_secrets_client.get_secret_value.return_value = {"SecretString": "my_secret_key"}
 
     mock_s3_client = Mock()
 
+    mock_batch_client = Mock()
+
     clients = {
         "secretsmanager": mock_secrets_client,
-        "s3": mock_s3_client
+        "s3": mock_s3_client,
+        "batch": mock_batch_client
     }
 
     def get_client(service_name, *args, **kwargs):
@@ -37,6 +41,8 @@ def mock_boto3_client(config):
 def mock_env_vars():
     os.environ["AWS_REGION"] = "mock-region"
     os.environ["INPUT_BUCKET"] = "mock-bucket"
+    os.environ["JOB_DEFINITION"] = "mock-job-definition"
+    os.environ["JOB_QUEUE"] = "mock-job-queue"
 
 
 def pytest_configure(config):
@@ -44,10 +50,10 @@ def pytest_configure(config):
     mock_boto3_client(config)
 
 
-def pytest_unconfigure(config):
-    boto_patcher = getattr(config, '_boto_patch', None)
-    if boto_patcher:
-        boto_patcher.stop()
+# def pytest_unconfigure(config):
+#     boto_patcher = getattr(config, '_boto_patch', None)
+#     if boto_patcher:
+#         boto_patcher.stop()
 
 
 def create_multipart(fields, files):
@@ -105,3 +111,25 @@ def api_gateway_event():
         "body": body
     }
     return event
+
+
+@pytest.fixture
+def s3_put_event():
+    return {
+        'Records': [
+            {
+                'awsRegion': 'mock-region',
+                'eventName': 'ObjectCreated:Put',
+                'eventSource': 'aws:s3',
+                's3': {
+                    'bucket': {
+                        'arn': 'mock-bucket-arn',
+                        'name': 'mock-bucket-name'
+                    },
+                    'object': {
+                        'key': 'input/mock-id'
+                    },
+                },
+            }
+        ]
+    }
