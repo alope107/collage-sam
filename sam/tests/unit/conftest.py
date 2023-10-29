@@ -6,6 +6,12 @@ import pytest
 
 
 def mock_boto3_client(config):
+    '''
+    Patches in a mock boto3 client and stores it in config._boto_patch
+    Currently mocked services:
+        - Secrets Manager
+        - S3
+    '''
     mock_secrets_client = Mock()
     mock_secrets_client.get_secret_value.return_value = {"SecretString": "my_secret_key"}
 
