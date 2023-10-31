@@ -7,6 +7,10 @@ def mock_boto3_client(config):
         - S3
     '''
     mock_s3_client = Mock()
+    mock_file = Mock()
+    mock_file.read.return_value = "mock-file-data"
+    mock_resp = {"Body": mock_file}
+    mock_s3_client.get_object.return_value = mock_resp
 
     clients = {
         "s3": mock_s3_client,
