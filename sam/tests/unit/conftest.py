@@ -50,10 +50,10 @@ def pytest_configure(config):
     mock_boto3_client(config)
 
 
-# def pytest_unconfigure(config):
-#     boto_patcher = getattr(config, '_boto_patch', None)
-#     if boto_patcher:
-#         boto_patcher.stop()
+def pytest_unconfigure(config):
+    boto_patcher = getattr(config, '_boto_patch', None)
+    if boto_patcher:
+        boto_patcher.stop()
 
 
 def create_multipart(fields, files):

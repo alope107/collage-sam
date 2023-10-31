@@ -170,6 +170,16 @@ Resources:
               Action: "sts:AssumeRole"
       ManagedPolicyArns: 
         - "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+  ECSTaskRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service: "ecs-tasks.amazonaws.com"
+            Action: "sts:AssumeRole"
       Policies:
         - PolicyName: "S3AccessPolicy"
           PolicyDocument:
@@ -180,13 +190,13 @@ Resources:
                   - "s3:GetObject"
                 Resource:
                   # TODO(auberon): Figure out better way to get bucket name without circular dependency
-                  - !Sub "arn:aws:s3:::collage-${AWS::AccountId}-${AWS::Region}/input"
+                  - !Sub "arn:aws:s3:::collage-${AWS::AccountId}-${AWS::Region}/input/*"
               - Effect: "Allow"
                 Action:
                   - "s3:PutObject"
                 Resource:
                   # TODO(auberon): Figure out better way to get bucket name without circular dependency
-                  - !Sub "arn:aws:s3:::collage-${AWS::AccountId}-${AWS::Region}/output"
+                  - !Sub "arn:aws:s3:::collage-${AWS::AccountId}-${AWS::Region}/output/*"
   JobDefinition: # Defines what running a single job looks like
     Type: "AWS::Batch::JobDefinition"
     Properties:
@@ -196,6 +206,7 @@ Resources:
         Image: "redcliffesalaman/collage-aws:latest"
         Vcpus: 2
         Memory: 2000 # 2 GB
+        JobRoleArn: !Ref ECSTaskRole
       RetryStrategy:
         Attempts: 1
   JobQueue:

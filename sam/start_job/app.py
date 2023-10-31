@@ -5,12 +5,14 @@ import re
 batch_client = boto3.client('batch')
 JOB_DEFINITION = os.environ.get("JOB_DEFINITION")
 JOB_QUEUE = os.environ.get("JOB_QUEUE")
+INPUT_PREFIX = "input/"
+OUTPUT_PREFIX = "output/"
 
 print(f"{JOB_DEFINITION=} {JOB_QUEUE=}")
 
 
-def parse_job_name(object_key):
-    return re.search(r"^input/(.+)$", object_key).group(1)
+def parse_object_name(object_key):
+    return re.search(f"^{INPUT_PREFIX}(.+)$", object_key).group(1)
 
 
 def lambda_handler(event, context):
@@ -18,17 +20,17 @@ def lambda_handler(event, context):
     print(event)
 
     s3_info = event['Records'][0]['s3']
-    bucket_arn = s3_info['bucket']['arn']
+    bucket_name = s3_info['bucket']['name']
     object_key = s3_info['object']['key']
 
-    cmd_args = [bucket_arn, object_key]
+    object_name = parse_object_name(object_key)
 
-    job_name = parse_job_name(object_key)
+    cmd_args = [bucket_name, object_name, INPUT_PREFIX, OUTPUT_PREFIX]
 
     batch_client.submit_job(
         jobDefinition=JOB_DEFINITION,
         jobQueue=JOB_QUEUE,
-        jobName=job_name,
+        jobName=object_name,
         containerOverrides={
             "command": cmd_args
         }
