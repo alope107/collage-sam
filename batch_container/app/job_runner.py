@@ -1,5 +1,14 @@
+from pathlib import Path
 import sys
+
 import boto3
+
+from .generate import predict_and_save
+
+INPUT_FILE_PATH = "/input/input.fasta"
+OUTPUT_FILE_PATH = "/output/preds"
+# TODO(auberon): Make this configurable
+MODEL_FILE_PATH = "/models/Ecoli.pt"
 
 def upload_download(bucket, object_name, input_prefix, output_prefix):
     print(f"{bucket=} {object_name=} {input_prefix=} {output_prefix=}")
@@ -12,10 +21,24 @@ def upload_download(bucket, object_name, input_prefix, output_prefix):
                             )
     input_object = resp["Body"].read()
     print(f"Here's the object: {input_object}")
+
+    input_file = Path(INPUT_FILE_PATH)
+    input_file.parent.mkdir(exist_ok=True, parents=True)
+    input_file.write_bytes(input_object)
+
+    output_file = Path(OUTPUT_FILE_PATH)
+
+    # Currently hard-coded to beam size of 100 and CPU only.
+    # TODO(auberon): Make this configurable.
+    predict_and_save(input_file, MODEL_FILE_PATH, OUTPUT_FILE_PATH, 100, False)
+
+    output_object = output_file.read_bytes()
+    print(f"{output_object=}")
+
     output_key = output_prefix+object_name
     print(f"{output_key=}")
     s3_client.put_object(
-        Body=input_object,
+        Body=output_object,
         Bucket=bucket,
         Key=output_key,
     )

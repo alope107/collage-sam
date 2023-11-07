@@ -1,4 +1,4 @@
-FROM pytorch/pytorch 
+FROM redcliffesalaman/collage-model
 #TODO(auberon) pin to specific image version?
 
 COPY ./requirements.txt /requirements/requirements.txt
