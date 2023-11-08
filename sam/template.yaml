@@ -98,6 +98,29 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "collage-${AWS::AccountId}-${AWS::Region}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: false
+        RestrictPublicBuckets: false
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins: ["*"] # TODO(auberon): Make this configurable.
+            AllowedMethods: ["GET"]
+            AllowedHeaders: ["*"]
+            MaxAge: 3000
+  InputOutputBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref InputOutputBucket
+      PolicyDocument:
+        Statement:
+          - Sid: PublicReadForOutputPrefix
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - "s3:GetObject"
+            Resource: !Sub "${InputOutputBucket.Arn}/output/*"
 
   ### BATCH ###
   VPC:
@@ -185,7 +208,8 @@ Resources:
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Effect: "Allow"
+              - Sid: "ReadInput"
+                Effect: "Allow"
                 Action:
                   - "s3:GetObject"
                 Resource:
