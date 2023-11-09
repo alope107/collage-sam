@@ -20,7 +20,7 @@ resolve_s3 = true
 stack_name = "captcha-test"
 s3_prefix = "captcha-test"
 region = "us-west-1"
-disable_rollback = true
+disable_rollback = false
 image_repositories = []
 
 [default.package.parameters]
