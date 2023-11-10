@@ -228,9 +228,12 @@ Resources:
       ContainerProperties:
         # TODO(auberon): Make image configurable
         Image: "redcliffesalaman/collage-aws:latest"
-        Vcpus: 2
+        Vcpus: 4
         Memory: 2000 # 2 GB
         JobRoleArn: !Ref ECSTaskRole
+        # ResourceRequirements:
+        #   - Type: "GPU"
+        #     Value: 1
       RetryStrategy:
         Attempts: 1
   JobQueue:
@@ -248,9 +251,10 @@ Resources:
         Type: "EC2" # WE're going to use EC2 instead of Faergate because later we'll need GPUs
         MinvCpus: 0 # Will spin down to zero if no jobs
         DesiredvCpus: 0
-        MaxvCpus: 64
+        MaxvCpus: 8 # Maximum of 2 concurrent jobs
         InstanceTypes:
-          - "optimal"
+          - "optimal" #TODO(auberon): Experiment with optimal and spot instances.
+          # - "g4dn.xlarge" # Smallest CUDA GPU instance. 4 vCPUs, T4 GPU
         Subnets:
           - !Ref Subnet
         SecurityGroupIds:

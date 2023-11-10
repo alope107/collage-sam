@@ -9,7 +9,7 @@ from collage.model import initialize_collage_model
 
 # TODO(auberon): Make these configurable
 MODEL_FILE_PATH = "/models/Ecoli.pt"
-USE_GPU = False
+USE_GPU = True
 BEAM_SIZE = 100
 
 def download_predict_upload(bucket, object_name, input_prefix, output_prefix, model_file_path, beam_size, use_gpu):
