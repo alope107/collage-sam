@@ -264,9 +264,7 @@ Resources:
         DesiredvCpus: 0
         MaxvCpus: 4 # Maximum one concurrent job 
         InstanceTypes:
-          # - "optimal" #TODO(auberon): Experiment with optimal and spot instances.
-          - "g4dn.xlarge" # Smallest CUDA GPU instance. 4 vCPUs, T4 GPU
-          - "g3.4xlarge"
+          - "g4dn.xlarge" # Smallest CUDA GPU instance. Four vCPUs, one T4 GPU
         LaunchTemplate:
           LaunchTemplateId: !Ref GpuLaunchTemplate
           Version: !GetAtt GpuLaunchTemplate.LatestVersionNumber
