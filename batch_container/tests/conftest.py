@@ -1,35 +1,7 @@
 import io
-import sys
 from unittest.mock import Mock, patch, MagicMock
 
-# Attempt to import the module, and if it fails, create a mock.
-# TODO(auberon): Look into less jank way to mock collage
-# Challenge is that real collage may not be available at test time
-# This challenge will be resolved once there is a pip installable version of collage
-# Then it can just be mocked like any normal module
-try:
-    import collage
-except ImportError:
-    sys.modules['collage'] = MagicMock()
-
-try:
-    import collage.fasta
-except ImportError:
-    parse_fasta_result = {"mock-sequence": "mock_sequence-data"}
-    fasta_module_mock = MagicMock()
-    fasta_module_mock.parse_fasta.return_value = {"mock-sequence": "mock_sequence-data"}
-    sys.modules['collage.fasta'] = fasta_module_mock
-
-try:
-    import collage.generator
-except ImportError:
-    sys.modules['collage.generator'] = MagicMock()
-
-try:
-    import collage.model
-except ImportError:
-    sys.modules['collage.model'] = MagicMock()
-
+# TODO(auberon): Improve this mocking to not be as complicated
 def mock_boto3_client(config):
     '''
     Patches in a mock boto3 client and stores it in config._boto_patch
