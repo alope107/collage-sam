@@ -1,7 +1,13 @@
 import boto3
 from app.job_runner import download_predict_upload
+from unittest import mock
 
-def test_job_runner_gets_file_and_uploads_predictions_file_to_s3():
+@mock.patch('app.job_runner.beam_generator')
+@mock.patch('app.job_runner.initialize_collage_model')
+@mock.patch('app.job_runner.parse_fasta')
+def test_job_runner_gets_file_and_uploads_predictions_file_to_s3(mocked_parse, mocked_init, mocked_beam):
+    mocked_parse.return_value = {"mock-sequence": "mock_sequence-data"}
+    
     bucket = "mock-bucket"
     object_name = "mock-object-name"
     input_prefix = "mock-input-prefix/"
