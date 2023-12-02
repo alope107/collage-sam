@@ -229,7 +229,7 @@ Resources:
         # TODO(auberon): Make image configurable
         Image: "redcliffesalaman/collage-aws:latest"
         Vcpus: 4
-        Memory: 2000
+        Memory: 12000
         JobRoleArn: !Ref ECSTaskRole
         ResourceRequirements:
           - Type: "GPU"
