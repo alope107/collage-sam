@@ -111,25 +111,3 @@ def api_gateway_event():
         "body": body
     }
     return event
-
-
-@pytest.fixture
-def s3_put_event():
-    return {
-        'Records': [
-            {
-                'awsRegion': 'mock-region',
-                'eventName': 'ObjectCreated:Put',
-                'eventSource': 'aws:s3',
-                's3': {
-                    'bucket': {
-                        'arn': 'mock-bucket-arn',
-                        'name': 'mock-bucket-name'
-                    },
-                    'object': {
-                        'key': 'input/mock-id'
-                    },
-                },
-            }
-        ]
-    }
