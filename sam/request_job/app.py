@@ -16,7 +16,15 @@ RECAPTCHA_SECRET_NAME = "RecaptchaKeySecret"
 
 INPUT_BUCKET = os.environ.get("INPUT_BUCKET")
 INPUT_PREFIX = "input/"
+OUTPUT_PREFIX = "output/"
 print(f"INPUT_BUCKET: {INPUT_BUCKET}")
+
+JOB_DEFINITION = os.environ.get("JOB_DEFINITION")
+JOB_QUEUE = os.environ.get("JOB_QUEUE")
+print(f"{JOB_DEFINITION=} {JOB_QUEUE=}")
+
+MODEL_ARG = "--model_path"
+MODEL_PATTERN = "/models/{species}.pt"
 
 secrets_client = boto3.client(
     service_name="secretsmanager",
@@ -25,6 +33,11 @@ secrets_client = boto3.client(
 
 s3_client = boto3.client(
     service_name="s3",
+    region_name=REGION
+)
+
+batch_client = boto3.client(
+    service_name="batch",
     region_name=REGION
 )
 
@@ -98,7 +111,7 @@ def decode_form_data(body: str, is_base64: bool, content_type: str) -> dict:
             name = parsed[1]["name"]
             if name not in expected_parts:
                 raise EarlyExitException(f"Malformed request, go unexpected form part '{name}'", 400)
-            data[name] = part.text if expected_parts[name] == "text" else part.content
+            data[name] = part.text if expected_parts[name] == "string" else part.content
         else:
             raise EarlyExitException("Malformed request, missing Content-Disposition on form part", 400)
 
@@ -165,6 +178,19 @@ def lambda_handler(event, context):
             Body=form_data["fasta"],
             Bucket=INPUT_BUCKET,
             Key=f"{INPUT_PREFIX}{input_id}"
+        )
+
+        model_path = MODEL_PATTERN.format(species=form_data["species"])
+
+        cmd_args = [INPUT_BUCKET, input_id, INPUT_PREFIX, OUTPUT_PREFIX, MODEL_ARG, model_path]
+
+        batch_client.submit_job(
+            jobDefinition=JOB_DEFINITION,
+            jobQueue=JOB_QUEUE,
+            jobName=input_id,
+            containerOverrides={
+                "command": cmd_args
+            }
         )
 
         return {

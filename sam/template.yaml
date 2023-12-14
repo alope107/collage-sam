@@ -42,6 +42,8 @@ Resources:
           RECAPTCHA_SECRET: dummy
           RECAPTCHA_SECRET_ARN: !Ref RecaptchaKeySecret
           INPUT_BUCKET: !Ref InputOutputBucket
+          JOB_DEFINITION: !Ref JobDefinition
+          JOB_QUEUE: !Ref JobQueue
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -57,6 +59,12 @@ Resources:
                 - s3:ListBucket
               Resource:
                 - !Sub "arn:aws:s3:::${InputOutputBucket}/*"
+            - Effect: Allow
+              Action:
+                - batch:SubmitJob
+              Resource:
+              - !Ref JobDefinition
+              - !Ref JobQueue
   StartJobFunction:
     Type: AWS::Serverless::Function
     Properties:

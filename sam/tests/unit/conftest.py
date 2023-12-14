@@ -124,7 +124,7 @@ def s3_put_event():
                 's3': {
                     'bucket': {
                         'arn': 'mock-bucket-arn',
-                        'name': 'mock-bucket-name'
+                        'name': 'mock-bucket'
                     },
                     'object': {
                         'key': 'input/mock-id'

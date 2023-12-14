@@ -27,11 +27,12 @@ def lambda_handler(event, context):
 
     cmd_args = [bucket_name, object_name, INPUT_PREFIX, OUTPUT_PREFIX]
 
-    batch_client.submit_job(
-        jobDefinition=JOB_DEFINITION,
-        jobQueue=JOB_QUEUE,
-        jobName=object_name,
-        containerOverrides={
-            "command": cmd_args
-        }
-    )
+    print("SKIPPING SUBMIT, HOPEFULLY THIS FUNCTION IS OBSOLETE")
+    # batch_client.submit_job(
+    #     jobDefinition=JOB_DEFINITION,
+    #     jobQueue=JOB_QUEUE,
+    #     jobName=object_name,
+    #     containerOverrides={
+    #         "command": cmd_args
+    #     }
+    # )
