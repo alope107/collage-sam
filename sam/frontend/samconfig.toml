@@ -17,6 +17,10 @@ lint = true
 capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
+region = "us-west-1"
+parameter_overrides="RootDomainName=\"complexnmr.com\""
+s3_prefix = "collage-fe-stack"
+image_repositories = []
 
 [default.package.parameters]
 resolve_s3 = true

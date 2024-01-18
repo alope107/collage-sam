@@ -3,10 +3,26 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   collage-fe-stack
 
-  Sample SAM Template for collage-fe-stack
+  SAM template for hosting a static website in S3.
 
-Globals:
+Parameters:
+  RootDomainName:
+    Type: String
+    Description: The DNS name of the website WITHOUT the www (e.g. 'complexnmr.com')
 
 Resources:
+  SiteCertificate:
+      Type: AWS::CertificateManager::Certificate
+      Properties:
+        DomainName: !Ref RootDomainName
+        ValidationMethod: DNS
+        DomainValidationOptions: 
+          - DomainName: !Ref RootDomainName
+            ValidationDomain: !Ref RootDomainName
+        SubjectAlternativeNames:
+          - !Sub 'www.${RootDomainName}'
 
 Outputs:
+  SiteCertificateARN:
+    Description: "The ARN of the SSL certificate"
+    Value: !Ref SiteCertificate
