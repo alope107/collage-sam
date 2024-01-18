@@ -8,7 +8,9 @@ TODO(auberon): Have the bucket be managed by this template as well.
 
 1. `sam build --use-container`
 1. `sam deploy --guided`
+1. REGION MUST BE SET TO `us-east-1`! The certificates need to live there for everything to work. It is OK for the backend deployment to be in a different region.
 1. Make sure to set the root domain name when prompted. NO LEADING www!
+1. Set the HostedZoneId when prompted as well. Find this in the Route 53 page for your domain.
 1. The first time this is deployed, the deployment will wait on the validation of the certificate. You will need to validate the certificate manually in the AWS console.
    - As the deployment is waiting, open the Certificate Manager in the AWS Console
    - You should see a certificate that is pending validation.
