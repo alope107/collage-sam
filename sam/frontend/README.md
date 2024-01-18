@@ -12,7 +12,7 @@ TODO(auberon): Have the bucket be managed by this template as well.
 1. The first time this is deployed, the deployment will wait on the validation of the certificate. You will need to validate the certificate manually in the AWS console.
    - As the deployment is waiting, open the Certificate Manager in the AWS Console
    - You should see a certificate that is pending validation.
-   - On this certificate's page there will be two paris of CNAME names and values.
+   - On this certificate's page there will be two pairs of CNAME names and values.
    - In a separate tab, go to the Route 53 page for your hosted zone (domain).
    - Add a new record set (Add record, then in the same page add a second record before submitting).
    - For the name and values, copy the entries from the certificate manager page.
