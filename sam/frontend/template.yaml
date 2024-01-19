@@ -3,7 +3,11 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   collage-fe-stack
 
-  SAM template for hosting a static website in S3.
+  SAM template for hosting a static website in S3 with cloudfront.
+  Assumes you have already created the bucket and made it publicly visible for site browsing.
+  TODO(auberon): Make it so that the template handles this as well.
+
+  Also assumes you have a domain in Route 53 you wish to use.
 
 Parameters:
   RootDomainName:
@@ -52,9 +56,40 @@ Resources:
             QueryString: false
             Cookies:
               Forward: none
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt DistributionFunction.FunctionMetadata.FunctionARN
         ViewerCertificate:
           AcmCertificateArn: !Ref SiteCertificate
           SslSupportMethod: sni-only
+
+  # Taken from https://stackoverflow.com/questions/59634922/how-do-i-serve-index-html-in-subfolders-with-s3-cloudfront
+  # Used to automatically append index.html where needed.
+  DistributionFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      AutoPublish: true
+      # TODO(auberon): Investigate moving this function to a separate file
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          var uri = request.uri;
+          
+          // Check whether the URI is missing a file name.
+          if (uri.endsWith('/')) {
+              request.uri += 'index.html';
+          } 
+          // Check whether the URI is missing a file extension.
+          else if (!uri.includes('.')) {
+              request.uri += '/index.html';
+          }
+
+          return request;
+        }
+      FunctionConfig:
+        Comment: Redirect-Default-Index-Request
+        Runtime: cloudfront-js-1.0
+      Name: test-site-site-redirect-index-request
   
   SiteRecordSet:
     Type: AWS::Route53::RecordSetGroup
