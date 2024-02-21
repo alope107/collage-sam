@@ -97,6 +97,37 @@ Resources:
               - "s3:GetObject"
             Resource: !Sub "${InputOutputBucket.Arn}/output/*"
 
+  JobStatusChangeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: job_status_change/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Events:
+        BatchEvent:
+          Type: CloudWatchEvent
+          Properties:
+            Pattern:
+              source:
+                - "aws.batch"
+              detail-type:
+                - "Batch Job State Change"
+            EventBusName: default
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource:
+                  - !Sub "arn:aws:s3:::${InputOutputBucket}/*"
+      Environment:
+        Variables:
+          STATUS_BUCKET: !Ref InputOutputBucket
+
+
   ### BATCH ###
   VPC:
     Type: "AWS::EC2::VPC"

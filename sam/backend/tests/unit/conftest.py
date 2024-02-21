@@ -41,6 +41,7 @@ def mock_boto3_client(config):
 def mock_env_vars():
     os.environ["AWS_REGION"] = "mock-region"
     os.environ["INPUT_BUCKET"] = "mock-bucket"
+    os.environ["STATUS_BUCKET"] = "mock-bucket"
     os.environ["JOB_DEFINITION"] = "mock-job-definition"
     os.environ["JOB_QUEUE"] = "mock-job-queue"
 
