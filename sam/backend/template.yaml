@@ -90,12 +90,14 @@ Resources:
       Bucket: !Ref InputOutputBucket
       PolicyDocument:
         Statement:
-          - Sid: PublicReadForOutputPrefix
+          - Sid: PublicReadForPrefixes
             Effect: Allow
             Principal: "*"
             Action:
               - "s3:GetObject"
-            Resource: !Sub "${InputOutputBucket.Arn}/output/*"
+            Resource:
+            - !Sub "${InputOutputBucket.Arn}/output/*"
+            - !Sub "${InputOutputBucket.Arn}/status/*"
 
   JobStatusChangeFunction:
     Type: AWS::Serverless::Function
